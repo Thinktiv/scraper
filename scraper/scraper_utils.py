@@ -290,7 +290,7 @@ class MediaScraper(Scraper):
         return MediaEmbed(height = height or cls.height,
                           width = width or cls.width,
                           content = content)
-    
+
 def youtube_in_google(google_url):
     h = Scraper(google_url)
     h.download()
@@ -309,7 +309,7 @@ def make_scraper(url, **options):
             if domain.endswith(suffix):
                 scraper = cls
                 break
-    
+
     #sometimes youtube scrapers masquerade as google scrapers
     if scraper == GootubeScraper:
         youtube_url = youtube_in_google(url)
@@ -338,10 +338,26 @@ class YoutubeScraper(MediaScraper):
             video_id += "&start=%d" % seconds
         return video_id
 
-    def largest_image_url(self):
-        # Remove the deeplink part from the video id
-        return self.thumbnail_template.replace("$video_id",
-                                               self.video_id.split("&")[0])
+    def largest_image_url(self, default=True):
+        if default:
+            # Remove the deeplink part from the video id
+            return self.thumbnail_template.replace("$video_id",
+                                                   self.video_id.split("&")[0])
+        else:
+            self.thumbnail_template = ""
+            return MediaScraper.largest_image_url(self)
+
+    def media_object(self):
+        if not self.soup:
+            self.download()
+
+        if self.soup:
+            video_url = self.soup.find('link', itemprop = 'embedURL')['href']
+            if video_url:
+                video_url = video_url.split('?')[0]
+            return dict(video_id = self.video_id,
+                        video_url = video_url,
+                        type = self.domains[0])
 
 class TedScraper(MediaScraper):
     domains = ['ted.com']
@@ -409,13 +425,27 @@ class VimeoScraper(MediaScraper):
     media_template = '<embed src="$video_id" width="480" height="640" wmode="transparent" type="application/x-shockwave-flash"> </embed>'
     video_id_rx = re.compile('.*/(.*)')
 
+    def largest_image_url(self, default=True):
+        """
+        This code is written looking into the future
+        Like Youtube, if Vimeo defines some default image
+        """
+        if self.thumbnail_template and default:
+            # Remove the deeplink part from the video id
+            return self.thumbnail_template.replace("$video_id",
+                                                   self.video_id.split("&")[0])
+        else:
+            self.thumbnail_template = ""
+            return MediaScraper.largest_image_url(self)
+
     def media_object(self):
         if not self.soup:
             self.download()
 
         if self.soup:
-            video_url =  self.soup.find('meta', itemprop = 'embedUrl')['content']
-            return dict(video_id = video_url,
+            video_url = self.soup.find('meta', itemprop = 'embedUrl')['content']
+            return dict(video_id = self.video_id,
+                        video_url = video_url,
                         type = self.domains[0])
 
 class BreakScraper(MediaScraper):
@@ -613,7 +643,7 @@ class CraigslistScraper(MediaScraper):
                           content = content,
                           scrolling = True)
 
-        
+
 ########## oembed rich-media scrapers ##########
 
 class OEmbed(Scraper):
@@ -621,34 +651,34 @@ class OEmbed(Scraper):
     Oembed Scraper
     ==============
     Tries to use the oembed standard to create a media object.
-    
-    url_re: Regular Expression to match the incoming url against. 
-    api_endpoint: Url of the api end point you are using. 
+
+    url_re: Regular Expression to match the incoming url against.
+    api_endpoint: Url of the api end point you are using.
     api_params: Default Params to be sent with the outgoing request.
     """
-    url_re = ''  
+    url_re = ''
     api_endpoint = ''
     api_params = {}
-    
+
     def __init__(self, url, **options):
         Scraper.__init__(self, url, **options)
         self.oembed = None
-        
+
         #Fallback to the scraper if the url doesn't match
         if not self.url_re.match(self.url):
             self.__class__ = Scraper
-        
+
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, self.url)
 
     def download(self):
         self.api_params.update( { 'url':self.url})
-        query = urllib.urlencode(self.api_params)      
+        query = urllib.urlencode(self.api_params)
         api_url = "%s?%s" % (self.api_endpoint, query)
 
         self.content_type, self.content = fetch_url(api_url)
 
-        #Either a 404 or 500. 
+        #Either a 404 or 500.
         if not self.content:
             #raise ValueError('ISSUE CALLING %s' %api_url)
 #            log.warn('oEmbed call (%s) failed to return content for %s'
