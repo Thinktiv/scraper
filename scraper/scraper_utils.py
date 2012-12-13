@@ -145,11 +145,13 @@ class MediaEmbed(object):
         self.scrolling = scrolling
 
 class Scraper:
-    def __init__(self, url):
+    def __init__(self, url, **options):
         self.url = url
         self.content = None
         self.content_type = None
         self.soup = None
+        self.min_size = options['min_size'] if 'min_size' in options else 15000
+        self.max_aspect_ratio = options['max_aspect_ratio'] if 'max_aspect_ratio' in options else 2.0
 
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, self.url)
@@ -198,12 +200,12 @@ class Scraper:
             area = size[0] * size[1]
 
             #ignore little images
-            if area < 5000:
+            if area < self.min_size:
 #                log.debug('ignore little %s' % image_url)
                 continue
 
             #ignore excessively long/wide images
-            if max(size) / min(size) > 1.5:
+            if max(size) / min(size) > self.max_aspect_ratio:
 #                log.debug('ignore dimensions %s' % image_url)
                 continue
 
@@ -250,8 +252,8 @@ class MediaScraper(Scraper):
     video_id = None
     video_id_rx = None
 
-    def __init__(self, url):
-        Scraper.__init__(self, url)
+    def __init__(self, url, **options):
+        Scraper.__init__(self, url, **options)
 
         # first try the simple regex against the URL. If that fails,
         # see if the MediaScraper subclass has its own extraction
@@ -299,7 +301,7 @@ def youtube_in_google(google_url):
     except AttributeError, KeyError:
         pass
 
-def make_scraper(url):
+def make_scraper(url, **options):
     domain = utils.domain(url)
     scraper = Scraper
     for suffix, clses in scrapers.iteritems():
@@ -312,8 +314,8 @@ def make_scraper(url):
     if scraper == GootubeScraper:
         youtube_url = youtube_in_google(url)
         if youtube_url:
-            return make_scraper(youtube_url)
-    return scraper(url)
+            return make_scraper(youtube_url, **options)
+    return scraper(url, **options)
 
 ########## site-specific video scrapers ##########
 
@@ -412,7 +414,7 @@ class VimeoScraper(MediaScraper):
             self.download()
 
         if self.soup:
-            video_url =   self.soup.find('link', rel = 'video_src')['href']
+            video_url =  self.soup.find('meta', itemprop = 'embedUrl')['content']
             return dict(video_id = video_url,
                         type = self.domains[0])
 
@@ -628,8 +630,8 @@ class OEmbed(Scraper):
     api_endpoint = ''
     api_params = {}
     
-    def __init__(self, url):
-        Scraper.__init__(self, url)
+    def __init__(self, url, **options):
+        Scraper.__init__(self, url, **options)
         self.oembed = None
         
         #Fallback to the scraper if the url doesn't match
