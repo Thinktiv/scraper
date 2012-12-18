@@ -171,6 +171,16 @@ class Scraper:
                 image_url = urlparse.urljoin(self.url, i['src'])
                 yield image_url
 
+        if self.soup:
+            og_image = self.soup.find('meta', property='og:image')
+            if og_image and og_image['content']:
+#                log.debug("Using og:image")
+                yield og_image['content']
+            thumbnail_spec = self.soup.find('link', rel = 'image_src')
+            if thumbnail_spec and thumbnail_spec['href']:
+#                log.debug("Using image_src")
+                yield thumbnail_spec['href']
+
     def largest_image_url(self):
         if not self.content:
             self.download()
@@ -181,16 +191,6 @@ class Scraper:
 
         max_area = 0
         max_url = None
-
-        if self.soup:
-            og_image = self.soup.find('meta', property='og:image')
-            if og_image and og_image['content']:
-#                log.debug("Using og:image")
-                return og_image['content']
-            thumbnail_spec = self.soup.find('link', rel = 'image_src')
-            if thumbnail_spec and thumbnail_spec['href']:
-#                log.debug("Using image_src")
-                return thumbnail_spec['href']
 
         for image_url in self.image_urls():
             size = fetch_size(image_url, referer = self.url)
