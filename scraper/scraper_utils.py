@@ -151,6 +151,7 @@ class Scraper:
         self.content_type = None
         self.soup = None
         self.min_size = options['min_size'] if 'min_size' in options else 15000
+        self.min_width = options['min_width'] if 'min_width' in options else None
         self.max_aspect_ratio = options['max_aspect_ratio'] if 'max_aspect_ratio' in options else 2.0
 
     def __repr__(self):
@@ -195,6 +196,11 @@ class Scraper:
         for image_url in self.image_urls():
             size = fetch_size(image_url, referer = self.url)
             if not size:
+                continue
+
+            #ignore less-width images, if min_width given
+            if self.min_width and size[0] < self.min_width:
+#                log.debug('ignore less-width %s' % image_url)
                 continue
 
             area = size[0] * size[1]
