@@ -1,8 +1,11 @@
 from setuptools import setup, find_packages
 
+VERSION = (0, 1, 4)
+__version__ = '.'.join(map(str, VERSION))
+
 setup(
     name='scraper',
-    version=__import__('scraper').__version__,
+    version=__version__,
     description='Scraping Tool',
     long_description=open('README.rst').read(),
     author='Sandip Agarwal',
