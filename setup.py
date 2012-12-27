@@ -23,4 +23,9 @@ setup(
         'Programming Language :: Python',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
+    install_requires=[
+        "simplejson==2.6.1",
+        "PIL==1.1.7",
+        "BeautifulSoup==3.2.1",
+    ],
 )
