@@ -326,13 +326,14 @@ def make_scraper(url, **options):
 ########## site-specific video scrapers ##########
 
 class YoutubeScraper(MediaScraper):
-    domains = ['youtube.com']
+    domains = ['youtube.com', 'youtu.be']
     height = 295
     width = 480
     media_template = '<object width="490" height="295"><param name="movie" value="http://www.youtube.com/v/$video_id&fs=1"></param><param name="wmode" value="transparent"></param><param name="allowFullScreen" value="true"></param><embed src="http://www.youtube.com/v/$video_id&fs=1" type="application/x-shockwave-flash" wmode="transparent" allowFullScreen="true" width="480" height="295"></embed></object>'
     thumbnail_template = 'http://img.youtube.com/vi/$video_id/default.jpg'
     video_id_rx = re.compile('.*v=([A-Za-z0-9-_]+).*')
     video_deeplink_rx = re.compile('.*#t=(\d+)m(\d+)s.*')
+    short_link_video_id_rx = re.compile('.*youtu.be/([A-Za-z0-9-_]+).*')
 
     def video_id_extract(self):
         vid = self.video_id_rx.match(self.url)
@@ -342,6 +343,10 @@ class YoutubeScraper(MediaScraper):
         if(d):
             seconds = int(d.groups()[0])*60 + int(d.groups()[1])
             video_id += "&start=%d" % seconds
+        s_vid = self.short_link_video_id_rx.match(self.url)
+        if(s_vid):
+            video_id = s_vid.groups()[0]
+        
         return video_id
 
     def largest_image_url(self, default=True):
