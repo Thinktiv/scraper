@@ -333,6 +333,7 @@ class YoutubeScraper(MediaScraper):
     thumbnail_template = 'http://img.youtube.com/vi/$video_id/default.jpg'
     video_id_rx = re.compile('.*v=([A-Za-z0-9-_]+).*')
     video_deeplink_rx = re.compile('.*#t=(\d+)m(\d+)s.*')
+    short_link_video_id_rx = re.compile('.*youtu.be/([A-Za-z0-9-_]+).*')
 
     def video_id_extract(self):
         vid = self.video_id_rx.match(self.url)
@@ -342,6 +343,10 @@ class YoutubeScraper(MediaScraper):
         if(d):
             seconds = int(d.groups()[0])*60 + int(d.groups()[1])
             video_id += "&start=%d" % seconds
+        s_vid = self.short_link_video_id_rx.match(self.url)
+        if(s_vid):
+            video_id = s_vid.groups()[0]
+        
         return video_id
 
     def largest_image_url(self, default=True):
