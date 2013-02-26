@@ -154,6 +154,13 @@ class Scraper:
         self.min_width = options['min_width'] if 'min_width' in options else None
         self.max_aspect_ratio = options['max_aspect_ratio'] if 'max_aspect_ratio' in options else 2.0
 
+        self.small_image = options['small_image'] if 'small_image' in options else False
+        #Following would be used only if the small image flag is True
+        self.small_min_size = options['small_min_size'] if 'small_min_size' in options else 5000
+        self.small_min_width = options['small_min_width'] if 'small_min_width' in options else None
+        self.small_max_aspect_ratio = options['max_aspect_ratio'] if 'small_max_aspect_ratio' in options else 2.0
+
+
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, self.url)
 
@@ -192,38 +199,42 @@ class Scraper:
 
         max_area = 0
         max_url = None
+        small_max_area = 0
+        small_max_url = None
 
         for image_url in self.image_urls():
+            large_pass = True
+            small_pass = True
             size = fetch_size(image_url, referer = self.url)
             if not size:
                 continue
 
-            #ignore less-width images, if min_width given
-            if self.min_width and size[0] < self.min_width:
-#                log.debug('ignore less-width %s' % image_url)
-                continue
-
             area = size[0] * size[1]
+            aspect_ratio = max(size) / min(size)
 
+            #ignore less-width images, if min_width given
             #ignore little images
-            if area < self.min_size:
-#                log.debug('ignore little %s' % image_url)
-                continue
-
             #ignore excessively long/wide images
-            if max(size) / min(size) > self.max_aspect_ratio:
-#                log.debug('ignore dimensions %s' % image_url)
-                continue
+            if (self.min_width and size[0] < self.min_width) or area < self.min_size or aspect_ratio > self.max_aspect_ratio:
+                large_pass = False
+            if self.small_image and ((self.small_min_width and size[0] < self.small_min_width) or area < self.small_min_size or aspect_ratio > self.small_max_aspect_ratio):
+                small_pass = False
 
             #penalize images with "sprite" in their name
-            if 'sprite' in image_url.lower():
+            if (large_pass or (self.small_image and small_pass)) and 'sprite' in image_url.lower():
 #                log.debug('penalizing sprite %s' % image_url)
                 area /= 10
 
-            if area > max_area:
+            if large_pass and area > max_area:
                 max_area = area
                 max_url = image_url
 
+            if self.small_image and small_pass and area > small_max_area:
+                small_max_area = area
+                small_max_url = image_url
+
+        if not max_url and self.small_image:
+            return small_max_url, True
         return max_url
 
     def thumbnail(self):
@@ -346,7 +357,7 @@ class YoutubeScraper(MediaScraper):
         s_vid = self.short_link_video_id_rx.match(self.url)
         if(s_vid):
             video_id = s_vid.groups()[0]
-        
+
         return video_id
 
     def largest_image_url(self, default=True):
@@ -1398,7 +1409,7 @@ class YoutubeEmbedDeepScraper(DeepScraper):
             if movie_embed:
                 youtube_id = self.youtube_url_re.match(movie_embed['src']).group(2)
                 youtube_url = 'http://www.youtube.com/watch?v=%s"' % youtube_id
-#                log.debug('found youtube embed %s' % youtube_url)
+                #                log.debug('found youtube embed %s' % youtube_url)
                 mo = make_scraper(youtube_url).media_object()
                 mo['deep'] = scraper.url
                 return mo
