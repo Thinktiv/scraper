@@ -235,7 +235,7 @@ class Scraper:
 
         if not max_url and self.small_image:
             return small_max_url, True
-        return max_url
+        return max_url, False
 
     def thumbnail(self):
         image_url = self.largest_image_url()
