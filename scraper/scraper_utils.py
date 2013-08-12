@@ -12,6 +12,7 @@ import Image
 import ImageFile
 import math
 from BeautifulSoup import BeautifulSoup
+from django.conf import settings
 
 useragent = None
 
@@ -87,7 +88,7 @@ def fetch_url(url, referer = None, retries = 1, dimension = False):
             if referer:
                 req.add_header('Referer', referer)
 
-            open_req = urlopen(req)
+            open_req = urlopen(req, **{'timeout': settings.SCRAPER_FETCH_URL_TIMEOUT} if hasattr(settings, 'SCRAPER_FETCH_URL_TIMEOUT') else {})
 
             #if we only need the dimension of the image, we may not
             #need to download the entire thing
