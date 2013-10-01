@@ -30,5 +30,6 @@ setup(
         "simplejson==2.6.1",
         "PIL==1.1.7",
         "BeautifulSoup==3.2.1",
+        "eventlet==0.14.0"
     ],
 )

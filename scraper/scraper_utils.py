@@ -1,7 +1,6 @@
 from scraper import utils
 import simplejson as json
-
-from urllib2 import Request, HTTPError, URLError, urlopen
+from urllib2 import URLError, HTTPError
 from httplib import InvalidURL
 import urlparse
 import re
@@ -14,6 +13,8 @@ import math
 from BeautifulSoup import BeautifulSoup
 from django.conf import settings
 
+from eventlet.green import urllib2
+from eventlet.timeout import Timeout
 useragent = None
 
 chunk_size = 1024
@@ -81,14 +82,15 @@ def fetch_url(url, referer = None, retries = 1, dimension = False):
     if not (url.startswith('http://') or url.startswith('https://')):
         return nothing
     while True:
+        timeout = Timeout(10)
         try:
-            req = Request(url)
+            req = urllib2.Request(url)
             if useragent:
                 req.add_header('User-Agent', useragent)
             if referer:
                 req.add_header('Referer', referer)
 
-            open_req = urlopen(req, **{'timeout': settings.SCRAPER_FETCH_URL_TIMEOUT} if hasattr(settings, 'SCRAPER_FETCH_URL_TIMEOUT') else {})
+            open_req = urllib2.urlopen(req)
 
             #if we only need the dimension of the image, we may not
             #need to download the entire thing
@@ -126,9 +128,12 @@ def fetch_url(url, referer = None, retries = 1, dimension = False):
 #                log.debug('error while fetching: %s referer: %s' % (url, referer))
 #                log.debug(e)
                 return nothing
+        except Timeout:
+            timeout.cancel()
         finally:
             if 'open_req' in locals():
                 open_req.close()
+            timeout.cancel()
 
 def fetch_size(url, referer = None, retries = 1):
     return fetch_url(url, referer, retries, dimension = True)
