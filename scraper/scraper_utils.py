@@ -82,7 +82,7 @@ def fetch_url(url, referer = None, retries = 1, dimension = False):
     if not (url.startswith('http://') or url.startswith('https://')):
         return nothing
     while True:
-        timeout = Timeout(10)
+        timeout = Timeout(settings.SCRAPER_DOWNLOAD_TIMEOUT)
         try:
             req = urllib2.Request(url)
             if useragent:
@@ -122,14 +122,12 @@ def fetch_url(url, referer = None, retries = 1, dimension = False):
 
             return content_type, content
 
-        except (URLError, HTTPError, InvalidURL), e:
+        except (URLError, HTTPError, InvalidURL, Timeout), e:
             cur_try += 1
             if cur_try >= retries:
 #                log.debug('error while fetching: %s referer: %s' % (url, referer))
 #                log.debug(e)
                 return nothing
-        except Timeout:
-            timeout.cancel()
         finally:
             if 'open_req' in locals():
                 open_req.close()
