@@ -378,16 +378,16 @@ class YoutubeScraper(MediaScraper):
             self.download()
 
         if self.soup:
-            video_url = self.soup.find('meta', dict(property = 'og:video'))
+            video_url = self.soup.find('meta', dict(property='og:video'))
             if video_url:
                 video_url = video_url['content']
             else:
-                video_url = self.soup.find('link', itemprop = 'embedURL')['href']
-                video_url = video_url.replace("http", "https").replace("/v/", "/embed/")
+                video_url = self.soup.find('link', itemprop='embedURL')['href']
+
             if video_url:
                 video_url = video_url.split('?')[0]
-                video_url = "%s?rel=0"%video_url
-            return dict(video_id = self.video_id,
+                video_url = video_url.replace("http", "https").replace("/v/", "/embed/")
+            return dict(video_id=self.video_id,
                         video_url = video_url,
                         type = self.domains[0])
 
