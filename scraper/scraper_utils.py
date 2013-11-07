@@ -11,10 +11,13 @@ import Image
 import ImageFile
 import math
 from BeautifulSoup import BeautifulSoup
-from django.conf import settings
 
 from eventlet.green import urllib2
 from eventlet.timeout import Timeout
+
+import scraper.settings as scraper_settings
+
+
 useragent = None
 
 chunk_size = 1024
@@ -82,7 +85,7 @@ def fetch_url(url, referer = None, retries = 1, dimension = False):
     if not (url.startswith('http://') or url.startswith('https://')):
         return nothing
     while True:
-        timeout = Timeout(settings.SCRAPER_DOWNLOAD_TIMEOUT)
+        timeout = Timeout(scraper_settings.FETCH_URL_DOWNLOAD_TIMEOUT)
         try:
             req = urllib2.Request(url)
             if useragent:
@@ -364,7 +367,7 @@ class YoutubeScraper(MediaScraper):
 
         return video_id
 
-    def largest_image_url(self, default=True):
+    def largest_image_url(self, default=scraper_settings.USE_YOUTUBE_THUMBNAIL_TEMPLATE):
         if default:
             # Remove the deeplink part from the video id
             return self.thumbnail_template.replace("$video_id",
