@@ -453,6 +453,7 @@ class GootubeScraper(MediaScraper):
             image_url = utils.safe_eval_str(image_url)
             return image_url
 
+
 class VimeoScraper(MediaScraper):
     domains = ['vimeo.com']
     height = 448
@@ -478,7 +479,8 @@ class VimeoScraper(MediaScraper):
             self.download()
 
         if self.soup:
-            video_url = self.soup.find('meta', itemprop = 'embedUrl')['content'].replace("http", "https")
+            video_url = self.soup.find('meta', attrs={'name': 'twitter:player'})['content'] or \
+                self.soup.find('meta', itemprop = 'embedUrl')['content'].replace("http", "https")
             return dict(video_id = self.video_id,
                         video_url = video_url,
                         type = self.domains[0])
