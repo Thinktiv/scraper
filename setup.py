@@ -28,7 +28,7 @@ setup(
     ],
     install_requires=[
         "simplejson==2.6.1",
-        "PIL==1.1.7",
+        "Pillow==2.5.3",
         "BeautifulSoup==3.2.1",
     ],
 )
