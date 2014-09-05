@@ -2,13 +2,13 @@ from scraper import utils
 import simplejson as json
 from urllib2 import URLError, HTTPError
 from httplib import InvalidURL
+from PIL import Image
+from PIL import ImageFile
 import urlparse
 import re
 import urllib
 #import logging
 import StringIO
-import Image
-import ImageFile
 import math
 from BeautifulSoup import BeautifulSoup
 
