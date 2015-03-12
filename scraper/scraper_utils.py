@@ -389,7 +389,9 @@ class YoutubeScraper(MediaScraper):
 
             if video_url:
                 video_url = video_url.split('?')[0]
-                video_url = video_url.replace("http", "https").replace("/v/", "/embed/")
+                if not video_url.startswith('https'):
+                    video_url = video_url.replace("http", "https")
+                video_url = video_url.replace("/v/", "/embed/")
             return dict(video_id=self.video_id,
                         video_url = video_url,
                         type = self.domains[0])
